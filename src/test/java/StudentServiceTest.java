@@ -1,34 +1,72 @@
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class StudentServiceTest {
 
+    private Student s(String name, int age, double gpa) {
+        return new Student(name, age, gpa);
+    }
+
     @Test
-    void testAddStudentAndTopStudent() {
+    void calculateAverageGpa_empty_returnsZero() {
         StudentService service = new StudentService();
-        Student s1 = new Student("Alice", 20, 3.5);
-        Student s2 = new Student("Bob", 22, 3.9);
+        assertEquals(0.0, service.calculateAverageGpa(), 1e-9);
+    }
 
-        service.addStudent(s1);
-        service.addStudent(s2);
+    @Test
+    void addStudent_thenAverageIsCorrect() {
+        StudentService service = new StudentService();
+        service.addStudent(s("A", 20, 4.0));
+        service.addStudent(s("B", 21, 2.0));
 
-        // Test if top student is correctly identified
+        assertEquals(3.0, service.calculateAverageGpa(), 1e-9);
+    }
+
+    @Test
+    void getTopStudent_empty_returnsNull() {
+        StudentService service = new StudentService();
+        assertNull(service.getTopStudent());
+    }
+
+    @Test
+    void getTopStudent_returnsHighestGpaStudent() {
+        StudentService service = new StudentService();
+        service.addStudent(s("A", 20, 3.2));
+        service.addStudent(s("B", 21, 3.9));
+        service.addStudent(s("C", 22, 2.5));
+
         Student top = service.getTopStudent();
-        assertEquals("Bob", top.getName());
+        assertNotNull(top);
+        assertEquals("B", top.getName());
+        assertEquals(3.9, top.getGpa(), 1e-9);
     }
 
     @Test
-    void testCalculateAverageGpa() {
+    void removeStudentByName_existingStudent_removedAndAffectsResults() {
         StudentService service = new StudentService();
-        service.addStudent(new Student("Alice", 20, 3.5));
-        service.addStudent(new Student("Bob", 22, 3.5));
+        service.addStudent(s("A", 20, 4.0));
+        service.addStudent(s("B", 21, 2.0));
+        service.addStudent(s("C", 22, 3.0));
 
-        double avg = service.calculateAverageGpa();
-        assertEquals(3.5, avg, 0.001);
+        service.removeStudentByName("A"); // remove top
+
+        Student top = service.getTopStudent();
+        assertNotNull(top);
+        assertNotEquals("A", top.getName());
+
+        assertEquals(2.5, service.calculateAverageGpa(), 1e-9); // (2+3)/2
     }
 
-    // Intentionally leave out tests for:
-    // - removeStudentByName
-    // - behavior with empty student list
-    // - Utils methods
+    @Test
+    void removeStudentByName_nonExisting_doesNothing() {
+        StudentService service = new StudentService();
+        service.addStudent(s("A", 20, 3.0));
+        service.addStudent(s("B", 21, 3.0));
+
+        double before = service.calculateAverageGpa();
+        service.removeStudentByName("Z");
+        double after = service.calculateAverageGpa();
+
+        assertEquals(before, after, 1e-9);
+    }
 }
